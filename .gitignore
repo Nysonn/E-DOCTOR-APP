@@ -1,0 +1,15 @@
+# Ignore node_modules (libraries installed via npm)
+node_modules/
+
+# Ignore environment variable file
+.env
+
+# Ignore log files
+*.log
+
+# Ignore operating system files (optional)
+.DS_Store
+Thumbs.db
+
+# Ignore package-lock.json (optional)
+package-lock.json
