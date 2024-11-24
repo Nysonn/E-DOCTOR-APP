@@ -3,9 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Incoming Call</title>
+  <link rel="icon" href="/images/doctor-logo.jpg" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="medic-dashboard.css">
 </head>
 <body>
-  <h1>Hello Doctor</h1>
+  <div class="container">
+    <h1>Incoming Call</h1>
+    <!-- <div class="call-details">
+      <p><strong>Patient Name:</strong> <span id="patient-name">John Doe</span></p>
+      <p><strong>Service:</strong> <span id="service-type">General Consultation</span></p>
+    </div> -->
+    <div class="buttons">
+      <button id="accept-call">Accept</button>
+      <button id="decline-call">Decline</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('accept-call').addEventListener('click', () => {
+      alert('Call Accepted!');
+      window.location.href = '/call-session';
+    });
+
+    document.getElementById('decline-call').addEventListener('click', () => {
+      alert('Call Declined');
+      // Optionally, you can redirect to another page or stay on this page.
+    });
+  </script>
 </body>
 </html>
