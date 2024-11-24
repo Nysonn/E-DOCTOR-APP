@@ -4,102 +4,90 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Make a Call</title>
-  <link rel="icon" href="/images/doctor-logo.jpg" type="image/png">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="make-a-call-patient.css">
+  <link rel="stylesheet" href="/make-a-call-patient.css">
 </head>
 <body>
   <div class="container">
-    <!-- Service section -->
-    <div class="welcome-text">
-      <h1>Consultation with Medical Specialist</h1>
-      <p>To get in touch with the Medical Specialist, initiate the call here.</p>
-      <!-- Button to start the call -->
-      <div class="buttons">
-        <button id="makeCall">Make a Call</button>
-      </div>
+    <h1>Start Consultation</h1>
+    <p>Connect with a medical specialist</p>
+    
+    <div class="select-container">
+      <select id="doctorSelect">
+        <option value="">Select a Doctor</option>
+      </select>
     </div>
-
-    <!-- Video container (hidden initially) -->
-    <div id="video-container" class="hidden">
-      <iframe id="video-frame" width="800" height="600" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
+    
+    <button id="makeCall">Make a Call</button>
+    
+    <div class="waiting-message" id="waitingMessage">
+      Waiting for doctor to accept the call...
+    </div>
+    
+    <div id="video-container">
+      <iframe id="jitsi-frame" width="800" height="600" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
     </div>
   </div>
 
-  <script src="https://sdk.twilio.com/js/video/releases/2.18.0/twilio-video.min.js"></script>
   <script>
-    const makeCallButton = document.getElementById('makeCall');
-    const videoContainer = document.getElementById('video-container');
-    const videoFrame = document.getElementById('video-frame');
-
-    makeCallButton.addEventListener('click', async () => {
+    const socket = new WebSocket(`ws://${window.location.host}`);
+    const makeCallBtn = document.getElementById('makeCall');
+    const waitingMessage = document.getElementById('waitingMessage');
+    const doctorSelect = document.getElementById('doctorSelect');
+    
+    async function loadDoctors() {
       try {
-        // Start a call by creating a video room
-        const response = await fetch('/start-call', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ service: 'Surgery Specialist' }),
+        const response = await fetch('/available-doctors');
+        const doctors = await response.json();
+        
+        doctors.forEach(doctor => {
+          const option = document.createElement('option');
+          option.value = doctor.id;
+          option.textContent = `${doctor.full_name} - ${doctor.specialisation}`;
+          doctorSelect.appendChild(option);
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-          const roomSid = data.roomSid;
-          await joinRoom(roomSid);
-        } else {
-          alert('Failed to initiate the call. Please try again.');
-        }
       } catch (error) {
-        console.error('Error initiating call:', error);
-        alert('An error occurred while initiating the call.');
+        console.error('Error loading doctors:', error);
       }
+    }
+
+    loadDoctors();
+    
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        type: 'register',
+        userId: '<%= user ? user.id : "" %>'
+      }));
+    };
+    
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'call-accepted') {
+        waitingMessage.classList.remove('show');
+        const iframeSrc = `https://meet.jit.si/${data.roomName}`;
+        const jitsiFrame = document.getElementById("jitsi-frame");
+        jitsiFrame.src = iframeSrc;
+        document.getElementById("video-container").classList.add('show');
+      }
+    };
+
+    makeCallBtn.addEventListener("click", async () => {
+      const selectedDoctorId = doctorSelect.value;
+      
+      if (!selectedDoctorId) {
+        alert('Please select a doctor first');
+        return;
+      }
+
+      makeCallBtn.disabled = true;
+      doctorSelect.disabled = true;
+      waitingMessage.classList.add('show');
+
+      socket.send(JSON.stringify({
+        type: 'start-call',
+        patientId: '<%= user ? user.id : "" %>',
+        doctorId: selectedDoctorId
+      }));
     });
-
-    async function joinRoom(roomSid) {
-      try {
-        // Get a token for joining the room
-        const response = await fetch(`/get-token?roomSid=${roomSid}`);
-        const data = await response.json();
-
-        if (data.success) {
-          const token = data.token;
-
-          // Connect to the room
-          const room = await Twilio.Video.connect(token, { room: roomSid });
-
-          console.log(`Successfully connected to room: ${room.name}`);
-          videoContainer.classList.remove('hidden');
-
-          // Attach participant tracks to the video container
-          room.participants.forEach(participant => attachParticipantTracks(participant));
-          room.on('participantConnected', participant => attachParticipantTracks(participant));
-          room.on('participantDisconnected', detachParticipantTracks);
-        } else {
-          alert('Failed to get the token.');
-        }
-      } catch (error) {
-        console.error('Error joining room:', error);
-        alert('An error occurred while joining the video call.');
-      }
-    }
-
-    function attachParticipantTracks(participant) {
-      participant.tracks.forEach(publication => {
-        if (publication.track) {
-          videoContainer.appendChild(publication.track.attach());
-        }
-      });
-    }
-
-    function detachParticipantTracks(participant) {
-      participant.tracks.forEach(publication => {
-        if (publication.track) {
-          publication.track.detach().forEach(element => element.remove());
-        }
-      });
-    }
   </script>
 </body>
 </html>

@@ -7,11 +7,14 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import axios from "axios";
 import Twilio from "twilio";
+import { WebSocketServer } from 'ws';
+import http from 'http';
 
 // Load environment variables
 dotenv.config();
 
 const PORT = 3000;
+// const IP  = '192.168.137.1';
 const app = express();
 
 // PostgreSQL Database connection
@@ -37,6 +40,15 @@ app.use(
     },
   })
 );
+
+// Middleware for authenticated routes
+function requireAuth(req, res, next) {
+  if (req.session && req.session.user) {
+    next();
+  } else {
+    res.redirect("/sign-in");
+  }
+}
 
 // Middleware setup
 app.use(express.json());
@@ -102,13 +114,17 @@ app.post("/signin", async (req, res) => {
 });
 
 // Patient dashboard route
-app.get("/patient-dashboard", (req, res) => {
+app.get("/patient-dashboard", requireAuth, (req, res) => {
   res.render("patient-dashboard", { user: req.session.user });
 });
 
-// Doctor dashboard route
-app.get("/medic-dashboard", (req, res) => {
-  res.render("medic-dashboard", { user: req.session.user });
+// Render doctor's dashboard
+app.get("/medic-dashboard", requireAuth, (req, res) => {
+  const roomName = req.session.roomName || null;
+  res.render("medic-dashboard", { 
+    roomName,
+    user: req.session.user  // Add the user object from the session
+  });
 });
 
 // Create patient account route
@@ -185,79 +201,123 @@ app.post("/signup-doctor", async (req, res) => {
 });
 
 // Video call setup
-app.get("/make-a-call-patient", (req, res) => {
-  res.render("make-a-call-patient");
+app.get("/make-a-call-patient", requireAuth, (req, res) => {
+  res.render("make-a-call-patient", {
+    user: req.session.user
+  });
 });
 
-app.post("/start-call", async (req, res) => {
-  const { service } = req.body;
-
+// Video call setup - create a unique room name and send it to the frontend
+app.post("/start-call", (req, res) => {
   try {
-    const room = await twilioClient.video.rooms.create({
-      uniqueName: service,
-      type: "peer-to-peer",
-    });
-
-    res.json({ success: true, roomSid: room.sid });
+    const roomName = `ConsultationRoom-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+    req.session.roomName = roomName; // Save the room name in the session
+    res.json({ success: true, roomName });
   } catch (error) {
-    console.error("Error creating video call room:", error);
-    res.status(500).json({ success: false, message: "Error creating video room" });
-  }
-});
-
-app.get("/get-token", (req, res) => {
-  const { roomSid } = req.query;
-
-  try {
-    const token = new Twilio.jwt.AccessToken(
-      TWILIO_ACCOUNT_SID,
-      TWILIO_API_KEY,
-      TWILIO_API_SECRET
-    );
-    token.identity = `user-${Math.random()}`;
-    const videoGrant = new Twilio.jwt.AccessToken.VideoGrant({ room: roomSid });
-    token.addGrant(videoGrant);
-
-    res.json({ success: true, token: token.toJwt() });
-  } catch (error) {
-    console.error("Error generating token:", error);
-    res.status(500).json({ success: false, message: "Error generating token" });
+    console.error("Error generating room name:", error);
+    res.status(500).json({ success: false, message: "Failed to generate room name." });
   }
 });
 
 // Incoming Call page route (GET)
 app.get("/incoming-call", (req, res) => {
   // Render the incoming call page (incoming-call.ejs)
-  res.render("medic-dashboard", {
-    patientName: "John Doe", // Placeholder, can be dynamic from session or DB
-    serviceType: "General Consultation", // Placeholder, can be dynamic
+  res.render("medic-dashboard");
+});
+
+app.post("/accept-call", (req, res) => {
+  if (req.session.roomName) {
+    res.json({ success: true, roomName: req.session.roomName });
+  } else {
+    res.status(400).json({ success: false, message: "No active room available." });
+  }
+});
+
+app.post("/decline-call", (req, res) => {
+  try {
+    req.session.roomName = null; // Clear room from the session
+    res.json({ success: true, message: "Call declined successfully." });
+  } catch (error) {
+    console.error("Error during call decline:", error);
+    res.status(500).json({ success: false, message: "Failed to decline call." });
+  }
+});
+
+// Add this route to fetch available doctors
+app.get('/available-doctors', requireAuth, async (req, res) => {
+  try {
+    const query = `
+      SELECT id, full_name, specialisation 
+      FROM users 
+      WHERE role = 'Doctor'
+    `;
+    const result = await db.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    res.status(500).json({ error: 'Failed to fetch doctors' });
+  }
+});
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize WebSocket server
+const wss = new WebSocketServer({ server });
+
+// Store active calls and connections
+const activeConnections = new Map();
+const activeCalls = new Map();
+
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
+    const data = JSON.parse(message);
+    console.log('Received WebSocket message:', data);
+    
+    switch (data.type) {
+      case 'register':
+        console.log('Registering user:', data.userId);
+        activeConnections.set(data.userId, ws);
+        break;
+        
+      case 'start-call':
+        console.log('Starting call:', data);
+        const roomName = `ConsultationRoom-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
+        activeCalls.set(data.patientId, {
+          roomName,
+          doctorId: data.doctorId
+        });
+        
+        const doctorWs = activeConnections.get(data.doctorId);
+        if (doctorWs) {
+          console.log('Notifying doctor of incoming call');
+          doctorWs.send(JSON.stringify({
+            type: 'incoming-call',
+            roomName,
+            patientId: data.patientId
+          }));
+        } else {
+          console.log('Doctor not connected:', data.doctorId);
+        }
+        break;
+        
+      case 'accept-call':
+        const callDetails = activeCalls.get(data.patientId);
+        if (callDetails) {
+          const patientWs = activeConnections.get(data.patientId);
+          if (patientWs) {
+            patientWs.send(JSON.stringify({
+              type: 'call-accepted',
+              roomName: callDetails.roomName
+            }));
+          }
+        }
+        break;
+    }
   });
 });
 
-// Handle accept call (POST)
-app.post("/accept-call", (req, res) => {
-  const { patientName, serviceType } = req.body;
-
-  // You can process the call acceptance here (e.g., initiate video call, notify patient)
-  console.log(`Call accepted for ${patientName} for ${serviceType}`);
-
-  // Redirect to call session or any other page
-  res.redirect("/call-session");
-});
-
-// Handle decline call (POST)
-app.post("/decline-call", (req, res) => {
-  const { patientName } = req.body;
-
-  // You can process the call decline here (e.g., log the decline, notify patient)
-  console.log(`Call declined for ${patientName}`);
-
-  // Optionally, redirect to another page or stay on the current page
-  res.redirect("/medic-dashboard");
-});
-
-
-// Listen on PORT
-app.listen(PORT, () => {
+// Update the listen call to use the HTTP server
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

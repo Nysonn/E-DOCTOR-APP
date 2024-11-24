@@ -3,33 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Incoming Call</title>
-  <link rel="icon" href="/images/doctor-logo.jpg" type="image/png">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="medic-dashboard.css">
+  <title>Doctor Dashboard</title>
+  <link rel="stylesheet" href="/medic-dashboard.css">
 </head>
 <body>
   <div class="container">
-    <h1>Incoming Call</h1>
-    <!-- <div class="call-details">
-      <p><strong>Patient Name:</strong> <span id="patient-name">John Doe</span></p>
-      <p><strong>Service:</strong> <span id="service-type">General Consultation</span></p>
-    </div> -->
-    <div class="buttons">
-      <button id="accept-call">Accept</button>
-      <button id="decline-call">Decline</button>
+    <h1>Doctor Dashboard</h1>
+    
+    <div class="default-message" id="defaultMessage">
+      Waiting for incoming calls...
+    </div>
+
+    <div class="call-buttons">
+      <button id="accept-call">Accept Call</button>
+      <button id="decline-call">Decline Call</button>
+    </div>
+
+    <div id="video-container">
+      <iframe id="jitsi-frame" width="800" height="600" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
     </div>
   </div>
 
   <script>
-    document.getElementById('accept-call').addEventListener('click', () => {
-      alert('Call Accepted!');
-      window.location.href = '/call-session';
-    });
+    const socket = new WebSocket(`ws://${window.location.host}`);
+    const defaultMessage = document.getElementById('defaultMessage');
+    const callButtons = document.querySelector('.call-buttons');
+    
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        type: 'register',
+        userId: '<%= user ? user.id : "" %>'
+      }));
+    };
+    
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'incoming-call') {
+        defaultMessage.style.display = 'none';
+        callButtons.style.display = 'flex';
+        
+        document.getElementById("accept-call").addEventListener("click", () => {
+          callButtons.style.display = 'none';
+          socket.send(JSON.stringify({
+            type: 'accept-call',
+            patientId: data.patientId
+          }));
+          
+          const iframeSrc = `https://meet.jit.si/${data.roomName}`;
+          const jitsiFrame = document.getElementById("jitsi-frame");
+          jitsiFrame.src = iframeSrc;
+          document.getElementById("video-container").classList.add('show');
+        });
+      }
+    };
 
-    document.getElementById('decline-call').addEventListener('click', () => {
-      alert('Call Declined');
-      // Optionally, you can redirect to another page or stay on this page.
+    document.getElementById("decline-call").addEventListener("click", async () => {
+      const response = await fetch("/decline-call", { method: "POST" });
+      const result = await response.json();
+      if (result.success) {
+        callButtons.style.display = 'none';
+        defaultMessage.style.display = 'block';
+      } else {
+        alert("Failed to decline call.");
+      }
     });
   </script>
 </body>
