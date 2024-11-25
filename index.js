@@ -9,6 +9,9 @@ import axios from "axios";
 import Twilio from "twilio";
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import pdf from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -55,14 +58,6 @@ app.use(express.json());
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Twilio credentials
-const { TWILIO_ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET } = process.env;
-
-// Twilio client initialization
-const twilioClient = new Twilio(TWILIO_API_KEY, TWILIO_API_SECRET, {
-  accountSid: TWILIO_ACCOUNT_SID,
-});
 
 // Landing page route
 app.get("/landing-page", (req, res) => {
@@ -259,6 +254,44 @@ app.get('/available-doctors', requireAuth, async (req, res) => {
   }
 });
 
+// Add this route before the server.listen() call
+app.post('/save-report', async (req, res) => {
+  const { patientName, symptoms, diagnosis, prescribedMedication, additionalNotes, userId } = req.body;
+
+  try {
+    // Generate PDF
+    const doc = new pdf();
+    const fileName = `report_${Date.now()}.pdf`;
+    const filePath = path.join(__dirname, 'reports', fileName);
+
+    // Ensure reports directory exists
+    if (!fs.existsSync(path.join(__dirname, 'reports'))) {
+      fs.mkdirSync(path.join(__dirname, 'reports'));
+    }
+
+    doc.pipe(fs.createWriteStream(filePath));
+    doc.fontSize(18).text('Patient Report', { align: 'center' });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Patient Name: ${patientName}`);
+    doc.text(`Symptoms: ${symptoms}`);
+    doc.text(`Diagnosis: ${diagnosis}`);
+    doc.text(`Prescribed Medication: ${prescribedMedication}`);
+    doc.text(`Additional Notes: ${additionalNotes}`);
+    doc.end();
+
+    // Save file path in the database
+    const query = `INSERT INTO patient_reports (user_id, file_path) VALUES ($1, $2) RETURNING id`;
+    const values = [userId, filePath];
+    await db.query(query, values);
+
+    res.status(200).send('Report saved successfully.');
+  } catch (error) {
+    console.error('Error saving report:', error);
+    res.status(500).send('Failed to save the report.');
+  }
+});
+
 // Create HTTP server
 const server = http.createServer(app);
 
@@ -318,6 +351,6 @@ wss.on('connection', (ws) => {
 });
 
 // Update the listen call to use the HTTP server
-server.listen(PORT, () => {
+server.listen(PORT,() => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

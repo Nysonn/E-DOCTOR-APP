@@ -16,14 +16,17 @@ body {
 }
 
 .container {
-  width: 90%;
-  max-width: 800px;
+  width: 95%;
+  max-width: 1200px;
+  min-height: 400px;
+  max-height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   box-shadow: 0 0 10px rgba(0, 143, 143, 0.5);
   padding: 2rem;
   text-align: center;
+  aspect-ratio: 16/9;
 }
 
 h1 {
@@ -96,6 +99,152 @@ h1 {
   max-width: 800px;
 }
 
+/* Add new dashboard styles */
+.dashboard {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  height: 80vh;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(0, 143, 143, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.incoming-calls {
+  flex: 1;
+  margin-right: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 0 10px rgba(0, 143, 143, 0.3);
+  color: #E5F4FF;
+}
+
+.incoming-calls h2 {
+  margin-bottom: 15px;
+  font-size: 1.5rem;
+  color: #E5F4FF;
+  text-shadow: 0 0 5px cyan;
+}
+
+.report-form {
+  flex: 2;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 0 10px rgba(0, 143, 143, 0.3);
+  color: #E5F4FF;
+}
+
+.report-form h2 {
+  margin-bottom: 15px;
+  font-size: 1.5rem;
+  color: #E5F4FF;
+  text-shadow: 0 0 5px cyan;
+}
+
+.report-form label {
+  display: block;
+  margin: 15px 0 5px;
+  color: #E5F4FF;
+  font-weight: bold;
+}
+
+.report-form input,
+.report-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 255, 255, 0.1);
+  color: #E5F4FF;
+}
+
+.report-form input:focus,
+.report-form textarea:focus {
+  outline: none;
+  border-color: cyan;
+  box-shadow: 0 0 5px cyan;
+}
+
+.report-form button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.35s ease;
+}
+
+.report-form button:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px #00FFFF, 0 0 30px #00FFFF;
+}
+
+.call-container {
+  display: flex;
+  width: 100%;
+  height: 80vh;
+  gap: 20px;
+}
+
+.call-container.hidden {
+  display: none;
+}
+
+.report-section {
+  flex: 0 0 400px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.report-section.minimized {
+  flex: 0 0 40px;
+}
+
+.report-section.minimized .report-form {
+  display: none;
+}
+
+.toggle-report {
+  position: absolute;
+  right: -20px;
+  top: 20px;
+  width: 20px;
+  height: 40px;
+  background: rgba(0, 255, 255, 0.3);
+  border: none;
+  border-radius: 0 5px 5px 0;
+  color: #E5F4FF;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.toggle-report:hover {
+  background: rgba(0, 255, 255, 0.5);
+}
+
+#video-container {
+  flex: 1;
+  display: block;
+  height: 100%;
+}
+
+#jitsi-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
@@ -113,5 +262,50 @@ h1 {
 
   .call-buttons button {
     width: 100%;
+  }
+
+  .dashboard {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .incoming-calls,
+  .report-form {
+    margin-right: 0;
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+
+  .incoming-calls h2,
+  .report-form h2 {
+    font-size: 1.2rem;
+  }
+
+  .call-container {
+    flex-direction: column;
+  }
+
+  .report-section {
+    flex: 0 0 auto;
+  }
+
+  .report-section.minimized {
+    flex: 0 0 40px;
+  }
+
+  #video-container {
+    flex: 0 0 50vh;
+  }
+
+  .toggle-report {
+    right: 0;
+    top: -20px;
+    width: 40px;
+    height: 20px;
+    border-radius: 5px 5px 0 0;
+  }
+
+  .toggle-report .toggle-icon {
+    transform: rotate(90deg);
   }
 }

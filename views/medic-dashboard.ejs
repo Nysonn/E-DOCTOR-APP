@@ -10,6 +10,53 @@
   <div class="container">
     <h1>Doctor Dashboard</h1>
     
+    <div class="dashboard">
+      <!-- Incoming Calls Section -->
+      <div class="incoming-calls">
+        <h2>Incoming Calls</h2>
+        <ul id="calls-list">
+          <!-- Incoming calls will be dynamically populated here -->
+        </ul>
+      </div>
+
+      <!-- Call Container (Report Form + Video) -->
+      <div id="call-container" class="call-container hidden">
+        <!-- Report Form with Toggle Button -->
+        <div id="report-section" class="report-section">
+          <button id="toggle-report" class="toggle-report">
+            <span class="toggle-icon">◀</span>
+          </button>
+          <div class="report-form">
+            <form id="patient-report-form" action="/save-report" method="POST">
+              <h2>Patient Report</h2>
+              <label for="patientName">Patient Name:</label>
+              <input type="text" id="patientName" name="patientName" required />
+
+              <label for="symptoms">Symptoms:</label>
+              <textarea id="symptoms" name="symptoms" required></textarea>
+
+              <label for="diagnosis">Diagnosis:</label>
+              <textarea id="diagnosis" name="diagnosis" required></textarea>
+
+              <label for="prescribedMedication">Prescribed Medication:</label>
+              <textarea id="prescribedMedication" name="prescribedMedication"></textarea>
+
+              <label for="additionalNotes">Additional Notes:</label>
+              <textarea id="additionalNotes" name="additionalNotes"></textarea>
+
+              <input type="hidden" name="userId" value="<%= user.id %>" />
+              <button type="submit">Save Report</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Video Container -->
+        <div id="video-container">
+          <iframe id="jitsi-frame" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
+        </div>
+      </div>
+    </div>
+
     <div class="default-message" id="defaultMessage">
       Waiting for incoming calls...
     </div>
@@ -17,10 +64,6 @@
     <div class="call-buttons">
       <button id="accept-call">Accept Call</button>
       <button id="decline-call">Decline Call</button>
-    </div>
-
-    <div id="video-container">
-      <iframe id="jitsi-frame" width="800" height="600" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
     </div>
   </div>
 
@@ -36,9 +79,26 @@
       }));
     };
     
+    const toggleReportBtn = document.getElementById('toggle-report');
+    const reportSection = document.getElementById('report-section');
+    const callContainer = document.getElementById('call-container');
+    
+    toggleReportBtn.addEventListener('click', () => {
+      reportSection.classList.toggle('minimized');
+      toggleReportBtn.querySelector('.toggle-icon').textContent = 
+        reportSection.classList.contains('minimized') ? '▶' : '◀';
+    });
+
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'incoming-call') {
+        // Update the calls list
+        const callsList = document.getElementById('calls-list');
+        const callItem = document.createElement('li');
+        callItem.textContent = `Call from Patient ID: ${data.patientId}`;
+        callsList.prepend(callItem);
+
+        // Show call controls
         defaultMessage.style.display = 'none';
         callButtons.style.display = 'flex';
         
@@ -52,7 +112,10 @@
           const iframeSrc = `https://meet.jit.si/${data.roomName}`;
           const jitsiFrame = document.getElementById("jitsi-frame");
           jitsiFrame.src = iframeSrc;
-          document.getElementById("video-container").classList.add('show');
+          
+          // Show call container with report form and video
+          callContainer.classList.remove('hidden');
+          document.querySelector('.incoming-calls').style.display = 'none';
         });
       }
     };
@@ -65,6 +128,33 @@
         defaultMessage.style.display = 'block';
       } else {
         alert("Failed to decline call.");
+      }
+    });
+
+    // Handle form submission
+    document.getElementById("patient-report-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const formObject = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch('/save-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formObject),
+        });
+
+        if (response.ok) {
+          alert('Report saved successfully!');
+          e.target.reset();
+        } else {
+          alert('Failed to save report.');
+        }
+      } catch (error) {
+        console.error('Error saving report:', error);
+        alert('Error saving report.');
       }
     });
   </script>
