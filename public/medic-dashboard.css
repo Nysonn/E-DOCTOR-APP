@@ -19,14 +19,14 @@ body {
   width: 95%;
   max-width: 1200px;
   min-height: 400px;
-  max-height: 80vh;
+  max-height: 90vh; /* Increased from 80vh to 90vh */
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   box-shadow: 0 0 10px rgba(0, 143, 143, 0.5);
   padding: 2rem;
   text-align: center;
-  aspect-ratio: 16/9;
+  aspect-ratio: auto; /* Removed fixed aspect ratio to allow flexible height */
 }
 
 h1 {
@@ -40,8 +40,12 @@ h1 {
 .default-message {
   color: #CFEFFF;
   font-size: 1.1rem;
-  margin: 2rem 0;
   text-shadow: 0 0 5px cyan;
+  text-align: center;
+  padding: 1rem;
+  width: 100%;
+  position: relative;
+  margin-top: 1rem;
 }
 
 .call-buttons {
@@ -84,11 +88,16 @@ h1 {
 }
 
 #video-container {
-  display: none;
-  margin-top: 2rem;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(0, 31, 84, 0.3);
 }
 
-#video-container.show {
+#video-container.active {
   display: block;
 }
 
@@ -103,123 +112,133 @@ h1 {
 .dashboard {
   display: flex;
   justify-content: space-between;
-  padding: 20px;
-  height: 80vh;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  height: calc(100vh - 12rem); /* Reduced height to fit container */
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 20px;
-  box-shadow: 0 0 10px rgba(0, 143, 143, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-.incoming-calls {
-  flex: 1;
-  margin-right: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 0 10px rgba(0, 143, 143, 0.3);
-  color: #E5F4FF;
-}
-
-.incoming-calls h2 {
-  margin-bottom: 15px;
-  font-size: 1.5rem;
-  color: #E5F4FF;
-  text-shadow: 0 0 5px cyan;
-}
-
-.report-form {
-  flex: 2;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 0 10px rgba(0, 143, 143, 0.3);
-  color: #E5F4FF;
-}
-
-.report-form h2 {
-  margin-bottom: 15px;
-  font-size: 1.5rem;
-  color: #E5F4FF;
-  text-shadow: 0 0 5px cyan;
-}
-
-.report-form label {
-  display: block;
-  margin: 15px 0 5px;
-  color: #E5F4FF;
-  font-weight: bold;
-}
-
-.report-form input,
-.report-form textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(0, 255, 255, 0.1);
-  color: #E5F4FF;
-}
-
-.report-form input:focus,
-.report-form textarea:focus {
-  outline: none;
-  border-color: cyan;
-  box-shadow: 0 0 5px cyan;
-}
-
-.report-form button {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #008080, #00FFFF);
-  color: #001F54;
-  border: none;
-  border-radius: 50px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.35s ease;
-}
-
-.report-form button:hover {
-  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
-  transform: scale(1.1);
-  box-shadow: 0 0 15px #00FFFF, 0 0 30px #00FFFF;
+  box-shadow: 0 0 20px rgba(0, 143, 143, 0.3);
+  backdrop-filter: blur(15px);
 }
 
 .call-container {
   display: flex;
   width: 100%;
-  height: 80vh;
-  gap: 20px;
-}
-
-.call-container.hidden {
-  display: none;
+  height: 100%;
+  gap: 1.5rem;
+  position: relative;
 }
 
 .report-section {
-  flex: 0 0 400px;
-  position: relative;
+  flex: 0 0 380px;
   transition: all 0.3s ease;
+  height: 100%;
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
 }
 
 .report-section.minimized {
-  flex: 0 0 40px;
+  flex: 0 0 50px;
 }
 
-.report-section.minimized .report-form {
-  display: none;
+.report-form {
+  height: 100%;
+  padding: 1.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 255, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+.report-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.report-form::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.report-form::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.5);
+  border-radius: 3px;
+}
+
+.report-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.report-form h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #E5F4FF;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.report-form label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #E5F4FF;
+  margin-bottom: 0.3rem;
+}
+
+.report-form input,
+.report-form textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 31, 84, 0.3);
+  color: #E5F4FF;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.report-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.report-form input:focus,
+.report-form textarea:focus {
+  outline: none;
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+  background: rgba(0, 31, 84, 0.4);
+}
+
+.report-form button {
+  margin-top: 1rem;
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.report-form button:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
 }
 
 .toggle-report {
   position: absolute;
-  right: -20px;
-  top: 20px;
-  width: 20px;
-  height: 40px;
+  right: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
   background: rgba(0, 255, 255, 0.3);
   border: none;
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 8px 8px 0;
   color: #E5F4FF;
   cursor: pointer;
   z-index: 10;
@@ -227,85 +246,181 @@ h1 {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
 }
 
 .toggle-report:hover {
   background: rgba(0, 255, 255, 0.5);
+  width: 28px;
 }
 
 #video-container {
   flex: 1;
-  display: block;
+  min-width: 0;
   height: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(0, 31, 84, 0.3);
 }
 
 #jitsi-frame {
   width: 100%;
   height: 100%;
   border-radius: 15px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 143, 143, 0.2);
 }
 
-/* Responsive Design */
+@media (max-width: 1024px) {
+  .report-section {
+    flex: 0 0 320px;
+  }
+}
+
 @media (max-width: 768px) {
-  .container {
-    padding: 1.5rem;
-  }
-
-  h1 {
-    font-size: 2rem;
-  }
-
-  .call-buttons {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .call-buttons button {
-    width: 100%;
-  }
-
-  .dashboard {
-    flex-direction: column;
-    padding: 10px;
-  }
-
-  .incoming-calls,
-  .report-form {
-    margin-right: 0;
-    margin-bottom: 20px;
-    padding: 15px;
-  }
-
-  .incoming-calls h2,
-  .report-form h2 {
-    font-size: 1.2rem;
-  }
-
   .call-container {
     flex-direction: column;
   }
 
-  .report-section {
-    flex: 0 0 auto;
-  }
-
-  .report-section.minimized {
-    flex: 0 0 40px;
+  #report-section {
+    display: none; /* Hide report section completely on mobile */
   }
 
   #video-container {
-    flex: 0 0 50vh;
+    flex: 1;
+    min-height: 40vh;
   }
+  .report-form {
+    display: none;
+  } 
+}
 
-  .toggle-report {
-    right: 0;
-    top: -20px;
-    width: 40px;
-    height: 20px;
-    border-radius: 5px 5px 0 0;
-  }
+/* Add these new styles for incoming calls */
+.incoming-calls {
+  display: flex;
+  flex-direction: column;
+  /* align-items: flex-start; */
+  gap: 1rem;
+  padding: 1.5rem;
+  flex: 1; /* Take up all available space in the dashboard */
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0, 143, 143, 0.3);
+  backdrop-filter: blur(15px);
+  overflow-y: auto;
+  max-height: 100%; /* Prevent overflow beyond the dashboard height */
+}
 
-  .toggle-report .toggle-icon {
-    transform: rotate(90deg);
-  }
+.incoming-calls h2 {
+  color: #E5F4FF;
+  text-align: center;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+#calls-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%; /* Ensure cards take full width */
+}
+
+.caller-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem;
+  background: rgba(0, 31, 84, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.caller-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 143, 143, 0.2);
+}
+
+.caller-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.caller-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #001F54;
+  font-weight: bold;
+}
+
+.caller-name {
+  color: #E5F4FF;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.caller-actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.caller-actions button {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.accept-btn {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+}
+
+.accept-btn:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 255, 255, 0.3);
+}
+
+.decline-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+}
+
+.decline-btn:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Update the existing styles */
+.call-container.hidden {
+  display: flex;
+}
+
+.report-section {
+  display: none; /* Hide by default */
+}
+
+.report-section.active {
+  display: block; /* Show when call is active */
+}
+
+.hidden {
+  display: none;
 }

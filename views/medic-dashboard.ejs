@@ -5,20 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doctor Dashboard</title>
   <link rel="stylesheet" href="/medic-dashboard.css">
+  <!-- <meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://meet.jit.si"> -->
 </head>
 <body>
   <div class="container">
     <h1>Doctor Dashboard</h1>
     
     <div class="dashboard">
-      <!-- Incoming Calls Section -->
-      <div class="incoming-calls">
-        <h2>Incoming Calls</h2>
-        <ul id="calls-list">
-          <!-- Incoming calls will be dynamically populated here -->
-        </ul>
-      </div>
-
+      
       <!-- Call Container (Report Form + Video) -->
       <div id="call-container" class="call-container hidden">
         <!-- Report Form with Toggle Button -->
@@ -50,15 +44,27 @@
           </div>
         </div>
 
-        <!-- Video Container -->
-        <div id="video-container">
-          <iframe id="jitsi-frame" allow="camera; microphone; fullscreen" frameborder="0"></iframe>
+         <!-- Incoming Calls Section -->
+      <div class="incoming-calls">
+        <h2>Incoming Calls</h2>
+        <ul id="calls-list">
+          <!-- Calls will be dynamically added here -->
+        </ul>
+        <div class="default-message" id="defaultMessage">
+          Waiting for incoming calls...
         </div>
       </div>
-    </div>
 
-    <div class="default-message" id="defaultMessage">
-      Waiting for incoming calls...
+        <!-- Video Container -->
+        <div id="video-container" class="hidden">
+          <iframe 
+            id="jitsi-frame" 
+            allow="camera; microphone; fullscreen; display-capture" 
+            frameborder="0"
+            style="width: 100%; height: 100%;"
+          ></iframe>
+        </div>
+      </div>
     </div>
 
     <div class="call-buttons">
@@ -86,50 +92,101 @@
     toggleReportBtn.addEventListener('click', () => {
       reportSection.classList.toggle('minimized');
       toggleReportBtn.querySelector('.toggle-icon').textContent = 
-        reportSection.classList.contains('minimized') ? '▶' : '◀';
+        reportSection.classList.contains('minimized') ? '▶' : '';
     });
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'incoming-call') {
-        // Update the calls list
+        // Create new caller card
         const callsList = document.getElementById('calls-list');
-        const callItem = document.createElement('li');
-        callItem.textContent = `Call from Patient ID: ${data.patientId}`;
-        callsList.prepend(callItem);
+        const callerCard = document.createElement('li');
+        callerCard.className = 'caller-card';
+        callerCard.id = `caller-${data.patientId}`;
 
-        // Show call controls
-        defaultMessage.style.display = 'none';
-        callButtons.style.display = 'flex';
-        
-        document.getElementById("accept-call").addEventListener("click", () => {
-          callButtons.style.display = 'none';
-          socket.send(JSON.stringify({
-            type: 'accept-call',
-            patientId: data.patientId
-          }));
-          
-          const iframeSrc = `https://meet.jit.si/${data.roomName}`;
-          const jitsiFrame = document.getElementById("jitsi-frame");
-          jitsiFrame.src = iframeSrc;
-          
-          // Show call container with report form and video
-          callContainer.classList.remove('hidden');
-          document.querySelector('.incoming-calls').style.display = 'none';
-        });
+        // Get first letter of patient name for avatar
+        const patientInitial = data.patientName ? data.patientName.charAt(0).toUpperCase() : 'P';
+
+        callerCard.innerHTML = `
+          <div class="caller-info">
+            <div class="caller-avatar">${patientInitial}</div>
+            <span class="caller-name">${data.patientName || 'Patient'} ${data.patientId}</span>
+          </div>
+          <div class="caller-actions">
+            <button class="accept-btn" onclick="acceptCall('${data.patientId}', '${data.roomName}')">
+              Accept
+            </button>
+            <button class="decline-btn" onclick="declineCall('${data.patientId}')">
+              Decline
+            </button>
+          </div>
+        `;
+
+        callsList.prepend(callerCard);
       }
     };
 
-    document.getElementById("decline-call").addEventListener("click", async () => {
-      const response = await fetch("/decline-call", { method: "POST" });
-      const result = await response.json();
-      if (result.success) {
-        callButtons.style.display = 'none';
-        defaultMessage.style.display = 'block';
-      } else {
-        alert("Failed to decline call.");
+    function acceptCall(patientId, roomName) {
+      // Remove the caller card
+      document.getElementById(`caller-${patientId}`).remove();
+      
+      // Send accept message to server
+      socket.send(JSON.stringify({
+        type: 'accept-call',
+        patientId: patientId
+      }));
+      
+      // Setup video call
+      const iframeSrc = `https://meet.jit.si/${roomName}`;
+      const jitsiFrame = document.getElementById("jitsi-frame");
+      jitsiFrame.src = iframeSrc;
+      
+      // Show video container and report section
+      const videoContainer = document.getElementById('video-container');
+      const reportSection = document.getElementById('report-section');
+      
+      // Add active class to video container and report section
+      videoContainer.classList.remove('hidden');
+      videoContainer.classList.add('active');
+      reportSection.classList.add('active');
+      
+      // Hide incoming calls if no more calls
+      const callsList = document.getElementById('calls-list');
+      if (callsList.children.length === 0) {
+        document.querySelector('.incoming-calls').style.display = 'none';
       }
-    });
+      
+      // Hide default message
+      document.getElementById('defaultMessage').style.display = 'none';
+    }
+
+    async function declineCall(patientId) {
+      try {
+        const response = await fetch("/decline-call", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ patientId })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById(`caller-${patientId}`).remove();
+          
+          // Show default message if no more calls
+          const callsList = document.getElementById('calls-list');
+          if (callsList.children.length === 0) {
+            document.getElementById('defaultMessage').style.display = 'block';
+          }
+        } else {
+          alert("Failed to decline call.");
+        }
+      } catch (error) {
+        console.error('Error declining call:', error);
+        alert('Error declining call.');
+      }
+    }
 
     // Handle form submission
     document.getElementById("patient-report-form").addEventListener("submit", async (e) => {
