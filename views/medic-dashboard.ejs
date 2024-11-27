@@ -12,64 +12,175 @@
     <h1>Doctor Dashboard</h1>
     
     <div class="dashboard">
-      
-      <!-- Call Container (Report Form + Video) -->
-      <div id="call-container" class="call-container hidden">
-        <!-- Report Form with Toggle Button -->
-        <div id="report-section" class="report-section">
-          <button id="toggle-report" class="toggle-report">
-            <span class="toggle-icon">◀</span>
-          </button>
-          <div class="report-form">
-            <form id="patient-report-form" action="/save-report" method="POST">
-              <h2>Patient Report</h2>
-              <label for="patientName">Patient Name:</label>
-              <input type="text" id="patientName" name="patientName" required />
-
-              <label for="symptoms">Symptoms:</label>
-              <textarea id="symptoms" name="symptoms" required></textarea>
-
-              <label for="diagnosis">Diagnosis:</label>
-              <textarea id="diagnosis" name="diagnosis" required></textarea>
-
-              <label for="prescribedMedication">Prescribed Medication:</label>
-              <textarea id="prescribedMedication" name="prescribedMedication"></textarea>
-
-              <label for="additionalNotes">Additional Notes:</label>
-              <textarea id="additionalNotes" name="additionalNotes"></textarea>
-
-              <input type="hidden" name="userId" value="<%= user.id %>" />
-              <button type="submit">Save Report</button>
-            </form>
-          </div>
-        </div>
-
-         <!-- Incoming Calls Section -->
-      <div class="incoming-calls">
-        <h2>Incoming Calls</h2>
-        <ul id="calls-list">
-          <!-- Calls will be dynamically added here -->
+      <!-- Add Sidebar Navigation -->
+      <nav class="sidebar">
+        <ul>
+          <li class="active" data-target="calls-section">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </span>
+            <span class="label">Calls</span>
+          </li>
+          <li data-target="messages-section">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+              </svg>
+            </span>
+            <span class="label">Messages</span>
+          </li>
+          <li data-target="appointments-section">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <span class="label">Appointments</span>
+          </li>
+          <li data-target="history-section">
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </span>
+            <span class="label">History</span>
+          </li>
         </ul>
-        <div class="default-message" id="defaultMessage">
-          Waiting for incoming calls...
+      </nav>
+
+      <!-- Main Content Area -->
+      <div class="content-area">
+        <!-- Calls Section (Your existing call-container) -->
+        <section id="calls-section" class="dashboard-section active">
+          <!-- Your existing call-container content -->
+          <div id="call-container" class="call-container">
+            <!-- Report Form with Toggle Button -->
+            <div id="report-section" class="report-section">
+              <button id="toggle-report" class="toggle-report">
+                <span class="toggle-icon">◀</span>
+              </button>
+              <div class="report-form">
+                <form id="patient-report-form" action="/save-report" method="POST">
+                  <h2>Patient Report</h2>
+                  <label for="patientName">Patient Name:</label>
+                  <input type="text" id="patientName" name="patientName" required />
+
+                  <label for="symptoms">Symptoms:</label>
+                  <textarea id="symptoms" name="symptoms" required></textarea>
+
+                  <label for="diagnosis">Diagnosis:</label>
+                  <textarea id="diagnosis" name="diagnosis" required></textarea>
+
+                  <label for="prescribedMedication">Prescribed Medication:</label>
+                  <textarea id="prescribedMedication" name="prescribedMedication"></textarea>
+
+                  <label for="additionalNotes">Additional Notes:</label>
+                  <textarea id="additionalNotes" name="additionalNotes"></textarea>
+
+                  <input type="hidden" name="userId" value="<%= user.id %>" />
+                  <button type="submit">Save Report</button>
+                </form>
+              </div>
+            </div>
+
+             <!-- Incoming Calls Section -->
+            <div class="incoming-calls" id="incoming-calls">
+              <h2>Incoming Calls</h2>
+              <ul id="calls-list">
+                <!-- Calls will be dynamically added here -->
+              </ul>
+              <div class="default-message" id="defaultMessage">
+                Waiting for incoming calls...
+              </div>
+            </div>
+
+              <!-- Video Container -->
+              <div id="video-container" class="hidden">
+                <iframe 
+                  id="jitsi-frame" 
+                  allow="camera; microphone; fullscreen; display-capture" 
+                  frameborder="0"
+                  style="width: 100%; height: 100%;"
+                ></iframe>
+              </div>
+            </div>
+          </section>
+
+          <!-- New Sections -->
+          <section id="messages-section" class="dashboard-section hidden">
+            <h2>Messages</h2>
+            <div class="messages-container">
+              <div class="messages-list" id="messages-list">
+                <!-- Messages will be populated here -->
+              </div>
+            </div>
+          </section>
+
+          <section id="appointments-section" class="dashboard-section hidden">
+            <h2>Appointments</h2>
+            <div class="appointments-container">
+              <!-- Add Schedule Button -->
+              <button id="show-appointment-form" class="schedule-btn">
+                <span class="icon">+</span>
+                Schedule Appointment
+              </button>
+
+              <!-- Appointment List -->
+              <ul id="appointments-list">
+                <li>
+                  <div class="appointment-details">
+                    <strong>John Doe</strong> - 12/01/2024, 10:00 AM
+                  </div>
+                  <div class="actions">
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                  </div>
+                </li>
+                <!-- Additional appointments will populate here -->
+              </ul>
+
+              <!-- Appointment Form (hidden by default) -->
+              <form class="appointment-form hidden" id="appointment-form">
+                <div class="form-header">
+                  <h3>New Appointment</h3>
+                  <button type="button" id="close-appointment-form" class="close-btn">&times;</button>
+                </div>
+                
+                <label for="patientName">Patient Name</label>
+                <input type="text" id="patientName" name="patientName" required />
+                
+                <label for="appointmentDate">Date</label>
+                <input type="date" id="appointmentDate" name="appointmentDate" required />
+                
+                <label for="appointmentTime">Time</label>
+                <input type="time" id="appointmentTime" name="appointmentTime" required />
+                
+                <label for="notes">Additional Notes</label>
+                <textarea id="notes" name="notes" rows="3"></textarea>
+                
+                <button type="submit">Schedule Appointment</button>
+              </form>
+            </div>
+          </section>
+          
+
+          <section id="history-section" class="dashboard-section hidden">
+            <h2>Medical History</h2>
+            <div class="history-container">
+              <ul id="history-list"></ul>
+            </div>
+          </section>
         </div>
       </div>
-
-        <!-- Video Container -->
-        <div id="video-container" class="hidden">
-          <iframe 
-            id="jitsi-frame" 
-            allow="camera; microphone; fullscreen; display-capture" 
-            frameborder="0"
-            style="width: 100%; height: 100%;"
-          ></iframe>
-        </div>
-      </div>
-    </div>
-
-    <div class="call-buttons">
-      <button id="accept-call">Accept Call</button>
-      <button id="decline-call">Decline Call</button>
     </div>
   </div>
 
@@ -98,19 +209,18 @@
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'incoming-call') {
-        // Create new caller card
         const callsList = document.getElementById('calls-list');
         const callerCard = document.createElement('li');
         callerCard.className = 'caller-card';
         callerCard.id = `caller-${data.patientId}`;
 
         // Get first letter of patient name for avatar
-        const patientInitial = data.patientName ? data.patientName.charAt(0).toUpperCase() : 'P';
+        const patientInitial = data.fullName ? data.fullName.charAt(0).toUpperCase() : 'P';
 
         callerCard.innerHTML = `
           <div class="caller-info">
             <div class="caller-avatar">${patientInitial}</div>
-            <span class="caller-name">${data.patientName || 'Patient'} ${data.patientId}</span>
+            <span class="caller-name">${data.fullName || 'Unknown Patient'}</span>
           </div>
           <div class="caller-actions">
             <button class="accept-btn" onclick="acceptCall('${data.patientId}', '${data.roomName}')">
@@ -213,6 +323,120 @@
         console.error('Error saving report:', error);
         alert('Error saving report.');
       }
+    });
+
+    // Add sidebar navigation functionality
+    document.querySelectorAll(".sidebar li").forEach(item => {
+      item.addEventListener("click", () => {
+        // Update active state
+        document.querySelectorAll(".sidebar li").forEach(li => li.classList.remove("active"));
+        item.classList.add("active");
+        
+        // Show/hide sections
+        document.querySelectorAll(".dashboard-section").forEach(section => {
+          section.classList.add("hidden");
+        });
+        const targetId = item.getAttribute("data-target");
+        document.getElementById(targetId).classList.remove("hidden");
+      });
+    });
+
+    // Mock data population (for demonstration)
+    function populateMockData() {
+      document.getElementById("messages-list").innerHTML = `
+        <div class="message-item">
+          <div class="message-header">
+            <div class="patient-name">
+              <div class="patient-avatar">J</div>
+              John Doe
+            </div>
+            <span class="message-time">2:30 PM</span>
+          </div>
+          <div class="message-content">
+            Hello Dr. Smith, I have a question about the prescription you gave me yesterday. 
+            Should I take the medication before or after meals?
+          </div>
+          <div class="message-actions">
+            <button class="reply-button" onclick="toggleReply(this)">Reply</button>
+          </div>
+          <div class="reply-form">
+            <textarea 
+              placeholder="Type your reply..."
+              class="reply-textarea"
+            ></textarea>
+            <div class="reply-actions">
+              <button class="send-reply-btn">Send</button>
+              <button class="cancel-reply-btn" onclick="toggleReply(this.parentElement.parentElement.previousElementSibling.children[0])">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="message-item">
+          <div class="message-header">
+            <div class="patient-name">
+              <div class="patient-avatar">S</div>
+              Sarah Johnson
+            </div>
+            <span class="message-time">11:45 AM</span>
+          </div>
+          <div class="message-content">
+            Good morning Doctor, I've been following the treatment plan and I'm feeling much better. 
+            Would it be possible to schedule a follow-up appointment next week?
+          </div>
+          <div class="message-actions">
+            <button class="reply-button" onclick="toggleReply(this)">Reply</button>
+          </div>
+          <div class="reply-form">
+            <textarea 
+              placeholder="Type your reply..."
+              class="reply-textarea"
+            ></textarea>
+            <div class="reply-actions">
+              <button class="send-reply-btn">Send</button>
+              <button class="cancel-reply-btn" onclick="toggleReply(this.parentElement.parentElement.previousElementSibling.children[0])">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add the toggle reply function
+      window.toggleReply = function(button) {
+        const messageItem = button.closest('.message-item');
+        const replyForm = messageItem.querySelector('.reply-form');
+        
+        // Close any other open reply forms
+        document.querySelectorAll('.reply-form.active').forEach(form => {
+          if (form !== replyForm) {
+            form.classList.remove('active');
+          }
+        });
+        
+        // Toggle the clicked reply form
+        replyForm.classList.toggle('active');
+      };
+    }
+
+    // Call mock data population when DOM is loaded
+    document.addEventListener("DOMContentLoaded", populateMockData);
+
+    // Form toggle functionality
+    document.getElementById('show-appointment-form').addEventListener('click', () => {
+      document.getElementById('appointment-form').classList.remove('hidden');
+      document.getElementById('show-appointment-form').classList.add('hidden');
+    });
+
+    document.getElementById('close-appointment-form').addEventListener('click', () => {
+      document.getElementById('appointment-form').classList.add('hidden');
+      document.getElementById('show-appointment-form').classList.remove('hidden');
+    });
+
+    // Handle form submission
+    document.getElementById('appointment-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      // Add your form submission logic here
+      
+      // After successful submission, hide form and show schedule button
+      document.getElementById('appointment-form').classList.add('hidden');
+      document.getElementById('show-appointment-form').classList.remove('hidden');
     });
   </script>
 </body>

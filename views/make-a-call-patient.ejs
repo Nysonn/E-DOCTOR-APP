@@ -85,7 +85,8 @@
       socket.send(JSON.stringify({
         type: 'start-call',
         patientId: '<%= user ? user.id : "" %>',
-        doctorId: selectedDoctorId
+        doctorId: selectedDoctorId,
+        fullName: '<%= user ? user.full_name : "" %>'
       }));
     });
   </script>

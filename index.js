@@ -12,6 +12,8 @@ import http from 'http';
 import pdf from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -254,7 +256,11 @@ app.get('/available-doctors', requireAuth, async (req, res) => {
   }
 });
 
-// Add this route before the server.listen() call
+// Add this right after your imports
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Update your /save-report route
 app.post('/save-report', async (req, res) => {
   const { patientName, symptoms, diagnosis, prescribedMedication, additionalNotes, userId } = req.body;
 
@@ -262,33 +268,61 @@ app.post('/save-report', async (req, res) => {
     // Generate PDF
     const doc = new pdf();
     const fileName = `report_${Date.now()}.pdf`;
-    const filePath = path.join(__dirname, 'reports', fileName);
+    const reportsDir = path.join(__dirname, 'reports');
+    const filePath = path.join(reportsDir, fileName);
 
     // Ensure reports directory exists
-    if (!fs.existsSync(path.join(__dirname, 'reports'))) {
-      fs.mkdirSync(path.join(__dirname, 'reports'));
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    doc.pipe(fs.createWriteStream(filePath));
+    // Create write stream
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
+
+    // Add content to PDF
     doc.fontSize(18).text('Patient Report', { align: 'center' });
     doc.moveDown();
 
-    doc.fontSize(12).text(`Patient Name: ${patientName}`);
+    doc.fontSize(12);
+    doc.text(`Patient Name: ${patientName}`);
+    doc.moveDown(0.5);
     doc.text(`Symptoms: ${symptoms}`);
+    doc.moveDown(0.5);
     doc.text(`Diagnosis: ${diagnosis}`);
+    doc.moveDown(0.5);
     doc.text(`Prescribed Medication: ${prescribedMedication}`);
+    doc.moveDown(0.5);
     doc.text(`Additional Notes: ${additionalNotes}`);
+    doc.moveDown(0.5);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`);
+
+    // Handle PDF completion
+    writeStream.on('finish', async () => {
+      try {
+        // Save file path in the database
+        const query = `INSERT INTO patient_reports (user_id, file_path) VALUES ($1, $2) RETURNING id`;
+        const values = [userId, filePath];
+        await db.query(query, values);
+        res.status(200).json({ success: true, message: 'Report saved successfully.' });
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        res.status(500).json({ success: false, message: 'Failed to save report to database.' });
+      }
+    });
+
+    // Handle PDF errors
+    writeStream.on('error', (writeError) => {
+      console.error('Error writing PDF:', writeError);
+      res.status(500).json({ success: false, message: 'Failed to generate PDF report.' });
+    });
+
+    // End the PDF document
     doc.end();
 
-    // Save file path in the database
-    const query = `INSERT INTO patient_reports (user_id, file_path) VALUES ($1, $2) RETURNING id`;
-    const values = [userId, filePath];
-    await db.query(query, values);
-
-    res.status(200).send('Report saved successfully.');
   } catch (error) {
     console.error('Error saving report:', error);
-    res.status(500).send('Failed to save the report.');
+    res.status(500).json({ success: false, message: 'Failed to save the report.' });
   }
 });
 
@@ -318,7 +352,8 @@ wss.on('connection', (ws) => {
         const roomName = `ConsultationRoom-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
         activeCalls.set(data.patientId, {
           roomName,
-          doctorId: data.doctorId
+          doctorId: data.doctorId,
+          fullName: data.fullName
         });
         
         const doctorWs = activeConnections.get(data.doctorId);
@@ -327,7 +362,8 @@ wss.on('connection', (ws) => {
           doctorWs.send(JSON.stringify({
             type: 'incoming-call',
             roomName,
-            patientId: data.patientId
+            patientId: data.patientId,
+            fullName: data.fullName
           }));
         } else {
           console.log('Doctor not connected:', data.doctorId);

@@ -424,3 +424,581 @@ h1 {
 .hidden {
   display: none;
 }
+
+/* Add these new styles while keeping existing ones */
+
+/* Sidebar Navigation */
+.sidebar {
+  width: 80px;
+  background: rgba(0, 31, 84, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 1rem 0;
+  margin-right: 1.5rem;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.sidebar ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar li {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sidebar li::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  height: 100%;
+  width: 3px;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.sidebar li.active::after {
+  background: #00FFFF;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.sidebar .icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar .icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: #E5F4FF;
+  transition: all 0.3s ease;
+}
+
+.sidebar li:hover .icon svg {
+  stroke: #00FFFF;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5));
+}
+
+.sidebar li.active .icon svg {
+  stroke: #00FFFF;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.7));
+}
+
+.sidebar .label {
+  font-size: 0.8rem;
+  color: #E5F4FF;
+}
+
+.sidebar li:hover {
+  background: rgba(0, 255, 255, 0.1);
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  overflow: hidden;
+}
+
+.dashboard-section {
+  height: 100%;
+  padding: 1.5rem;
+  background: rgba(0, 31, 84, 0.3);
+  border-radius: 15px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+/* Messages Section Styles */
+.messages-container {
+  height: calc(100% - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 255, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+.messages-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.5);
+  border-radius: 3px;
+}
+
+.message-item {
+  background: rgba(0, 31, 84, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.message-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 143, 143, 0.2);
+  background: rgba(0, 31, 84, 0.4);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.patient-name {
+  color: #E5F4FF;
+  font-weight: 500;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.patient-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #001F54;
+  font-weight: bold;
+}
+
+.message-time {
+  color: rgba(229, 244, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.message-content {
+  color: #E5F4FF;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.message-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+}
+
+.reply-button {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reply-button:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 255, 255, 0.3);
+}
+
+.message-reply {
+  display: none; /* Hide by default */
+  margin-top: 1rem;
+  padding: 1.2rem;
+  background: rgba(0, 31, 84, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+.message-reply.active {
+  display: block;
+}
+
+/* Add animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add styles for the reply form within message items */
+.message-item .reply-form {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.message-item .reply-form.active {
+  display: block;
+  animation: slideUp 0.3s ease-out;
+}
+
+#send-reply {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#send-reply:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+}
+
+/* Appointments Section Styles */
+.appointments-container {
+  height: calc(100% - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: rgba(0, 31, 84, 0.3);
+  border-radius: 15px;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  overflow-y: auto;
+}
+
+.appointment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(0, 31, 84, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.appointment-form label {
+  color: #E5F4FF;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.appointment-form input,
+.appointment-form textarea {
+  width: 100%;
+  padding: 0.8rem;
+  background: rgba(0, 31, 84, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #E5F4FF;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.appointment-form input:focus,
+.appointment-form textarea:focus {
+  outline: none;
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+  background: rgba(0, 31, 84, 0.4);
+}
+
+.appointment-form button {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.appointment-form button:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+}
+
+#appointments-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#appointments-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem;
+  background: rgba(0, 31, 84, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+#appointments-list li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 143, 143, 0.2);
+  background: rgba(0, 31, 84, 0.4);
+}
+
+.appointment-details {
+  color: #E5F4FF;
+  font-size: 1.1rem;
+}
+
+.appointment-details strong {
+  color: #00FFFF;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+.actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.actions button {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.actions .edit-btn {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+}
+
+.actions .edit-btn:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 255, 255, 0.3);
+}
+
+.actions .delete-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+}
+
+.actions .delete-btn:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.active {
+  display: block;
+}
+
+/* Reply form specific styles */
+.reply-form {
+  display: none;
+  margin-top: 1rem;
+}
+
+.reply-form.active {
+  display: block;
+}
+
+.reply-textarea {
+  width: 100%;
+  background: rgba(0, 31, 84, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: #E5F4FF;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  min-height: 80px;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.reply-textarea:focus {
+  outline: none;
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+  background: rgba(0, 31, 84, 0.4);
+}
+
+.reply-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+}
+
+.send-reply-btn, .cancel-reply-btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.send-reply-btn {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+}
+
+.send-reply-btn:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 255, 255, 0.3);
+}
+
+.cancel-reply-btn {
+  background: rgba(231, 76, 60, 0.8);
+  color: #fff;
+}
+
+.cancel-reply-btn:hover {
+  background: rgba(231, 76, 60, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Unified heading styles for all sections */
+#messages-section h2,
+#appointments-section h2,
+#history-section h2, #incoming-calls h2 {
+  color: #E5F4FF;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px cyan, 0 0 20px teal;
+  text-align: center;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+#messages-section h2::after,
+#appointments-section h2::after,
+#history-section h2::after, #incoming-calls h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00FFFF, transparent);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+/* Add these new styles */
+.schedule-btn {
+  background: linear-gradient(135deg, #008080, #00FFFF);
+  color: #001F54;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.schedule-btn:hover {
+  background: linear-gradient(135deg, #00FFFF, #E5F4FF);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+}
+
+.schedule-btn .icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.appointment-form {
+  position: relative;
+  background: rgba(0, 31, 84, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  margin-top: 1rem;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-header h3 {
+  color: #E5F4FF;
+  font-size: 1.2rem;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #E5F4FF;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #00FFFF;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Update the existing .hidden class */
+.hidden {
+  display: none !important;
+}
