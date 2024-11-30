@@ -11,7 +11,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import serverless from 'serverless-http';
 
 // Load environment variables
 dotenv.config();
@@ -389,5 +388,4 @@ server.listen(PORT,() => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-module.exports = app;
-module.exports.handler = serverless(app);
+
