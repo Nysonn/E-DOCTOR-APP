@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 import pg from "pg";
 import bcrypt from "bcrypt";
 import session from "express-session";
-import axios from "axios";
-import Twilio from "twilio";
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import pdf from 'pdfkit';
@@ -13,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import serverless from 'serverless-http';
 
 // Load environment variables
 dotenv.config();
@@ -389,3 +388,6 @@ wss.on('connection', (ws) => {
 server.listen(PORT,() => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+module.exports = app;
+module.exports.handler = serverless(app);
