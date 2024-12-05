@@ -108,12 +108,52 @@
         <!-- Messages Section -->
         <section id="messages-section" class="dashboard-section hidden">
           <h2>Messages</h2>
-          <div id="messages-container">
-            <div class="message-item">
-              <p><strong>Dr. Smith:</strong> How are you feeling today?</p>
+          <div class="messages-wrapper">
+            <!-- Doctors List -->
+            <div id="doctors-list" class="contacts-list">
+              <!-- Template for doctor items -->
+              <template id="doctor-template">
+                <div class="contact-item" data-doctor-id="">
+                  <div class="contact-avatar"></div>
+                  <div class="contact-details">
+                    <span class="contact-name"></span>
+                    <span class="contact-specialisation"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Chat Window -->
+            <div id="chat-window" class="chat-window">
+              <div id="chat-header" class="chat-header">
+                <div id="selected-doctor-name" class="chat-doctor-name">
+                  Select a contact to start chatting
+                </div>
+              </div>
+              <div id="messages-container">
+                <div class="messages-list" id="messages-list">
+                  <!-- Messages will be populated dynamically -->
+                </div>
+                <div class="message-input-container">
+                  <div class="input-wrapper">
+                    <textarea 
+                      id="message-input" 
+                      placeholder="Type your message..."
+                      class="message-textarea"
+                      rows="1"
+                    ></textarea>
+                    <button id="send-message" class="send-message-btn" disabled>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
+
       </div>
     </div>
   </div>
@@ -123,6 +163,7 @@
     const makeCallBtn = document.getElementById('makeCall');
     const waitingMessage = document.getElementById('waitingMessage');
     const doctorSelect = document.getElementById('doctorSelect');
+    const messageDoctorSelect = document.getElementById('messageDoctorSelect');
     const videoContainer = document.getElementById('video-container');
     const jitsiFrame = document.getElementById('jitsi-frame');
     
@@ -136,6 +177,10 @@
           option.value = doctor.id;
           option.textContent = `${doctor.full_name} - ${doctor.specialisation}`;
           doctorSelect.appendChild(option);
+
+          // Also add to message doctor select
+          const messageOption = option.cloneNode(true);
+          messageDoctorSelect.appendChild(messageOption);
         });
       } catch (error) {
         console.error('Error loading doctors:', error);
@@ -191,6 +236,42 @@
       }));
     });
 
+    // Send message
+    document.getElementById('send-message').addEventListener('click', () => {
+      const selectedDoctorId = messageDoctorSelect.value;
+      const input = document.getElementById('message-input');
+      const content = input.value.trim();
+      
+      if (!selectedDoctorId) {
+        alert('Please select a doctor to message');
+        return;
+      }
+
+      if (content) {
+        socket.send(JSON.stringify({
+          type: 'send-message',
+          senderId: '<%= user ? user.id : "" %>',
+          receiverId: selectedDoctorId,
+          content: content
+        }));
+        
+        // Add message to UI
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item sent';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">You</div>
+            <div class="message-time">${new Date().toLocaleString()}</div>
+          </div>
+          <div class="message-content">${content}</div>
+        `;
+        messagesList.appendChild(messageDiv);
+        
+        input.value = '';
+      }
+    });
+
     // Sidebar navigation functionality
     document.querySelectorAll(".sidebar li").forEach(item => {
       item.addEventListener("click", () => {
@@ -204,6 +285,139 @@
         document.getElementById(targetId).classList.remove("hidden");
       });
     });
+
+    async function loadDoctorsList() {
+      try {
+        const response = await fetch('/available-doctors');
+        const doctors = await response.json();
+        const doctorsList = document.getElementById('doctors-list');
+        const template = document.getElementById('doctor-template');
+        
+        doctors.forEach(doctor => {
+          const clone = template.content.cloneNode(true);
+          const item = clone.querySelector('.contact-item');
+          
+          item.setAttribute('data-doctor-id', doctor.id);
+          item.querySelector('.contact-avatar').textContent = doctor.full_name.charAt(0);
+          item.querySelector('.contact-name').textContent = doctor.full_name;
+          item.querySelector('.contact-specialisation').textContent = doctor.specialisation;
+          
+          item.addEventListener('click', () => selectDoctor(doctor));
+          doctorsList.appendChild(item);
+        });
+      } catch (error) {
+        console.error('Error loading doctors list:', error);
+      }
+    }
+
+    let selectedDoctorId = null;
+
+    function selectDoctor(doctor) {
+      selectedDoctorId = doctor.id;
+      
+      // Remove active class from all contacts
+      document.querySelectorAll('.contact-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Add active class to selected contact
+      const selectedItem = document.querySelector(`[data-doctor-id="${doctor.id}"]`);
+      if (selectedItem) {
+        selectedItem.classList.add('active');
+      }
+      
+      // Update chat header
+      document.getElementById('selected-doctor-name').textContent = doctor.full_name;
+      
+      // Enable send button
+      document.getElementById('send-message').disabled = false;
+      
+      // Load message history for this doctor
+      loadMessagesForDoctor(doctor.id);
+    }
+
+    async function loadMessagesForDoctor(doctorId) {
+      try {
+        const response = await fetch(`/messages/<%= user.id %>`);
+        const messages = await response.json();
+        
+        const messagesList = document.getElementById('messages-list');
+        messagesList.innerHTML = messages
+          .filter(msg => msg.sender_id === doctorId || msg.receiver_id === doctorId)
+          .map(msg => `
+            <div class="message-item ${msg.sender_id === '<%= user.id %>' ? 'sent' : 'received'}">
+              <div class="message-header">
+                <div class="message-sender">${msg.sender_id === '<%= user.id %>' ? 'You' : msg.sender_name}</div>
+                <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+              </div>
+              <div class="message-content">${msg.content}</div>
+            </div>
+          `).join('');
+        
+        messagesList.scrollTop = messagesList.scrollHeight;
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    }
+
+    // Update the send message event listener
+    document.getElementById('send-message').addEventListener('click', () => {
+      const input = document.getElementById('message-input');
+      const content = input.value.trim();
+      
+      if (!selectedDoctorId) {
+        alert('Please select a doctor to message');
+        return;
+      }
+
+      if (content) {
+        socket.send(JSON.stringify({
+          type: 'send-message',
+          senderId: '<%= user.id %>',
+          receiverId: selectedDoctorId,
+          content: content
+        }));
+        
+        // Add message to UI
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item sent';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">You</div>
+            <div class="message-time">${new Date().toLocaleString()}</div>
+          </div>
+          <div class="message-content">${content}</div>
+        `;
+        messagesList.appendChild(messageDiv);
+        messagesList.scrollTop = messagesList.scrollHeight;
+        
+        input.value = '';
+      }
+    });
+
+    // Handle incoming messages
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'receive-message') {
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item received';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">${data.senderName}</div>
+            <div class="message-time">${new Date(data.timestamp).toLocaleString()}</div>
+          </div>
+          <div class="message-content">${data.content}</div>
+        `;
+        messagesList.appendChild(messageDiv);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+    };
+
+    // Call this function after page load
+    loadDoctorsList();
   </script>
 </body>
 </html>

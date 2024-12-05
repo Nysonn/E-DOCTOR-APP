@@ -253,6 +253,23 @@ app.get('/available-doctors', requireAuth, async (req, res) => {
   }
 });
 
+// Add this route to fetch available patients
+app.get('/available-patients', requireAuth, async (req, res) => {
+  try {
+    const query = `
+      SELECT id, full_name, age, residence
+      FROM users 
+      WHERE role = 'Patient'
+      ORDER BY full_name ASC
+    `;
+    const result = await db.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    res.status(500).json({ error: 'Failed to fetch patients' });
+  }
+});
+
 // Add this right after your imports
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -329,12 +346,12 @@ const server = http.createServer(app);
 // Initialize WebSocket server
 const wss = new WebSocketServer({ server });
 
-// Store active calls and connections
+// Store active connections and calls
 const activeConnections = new Map();
 const activeCalls = new Map();
 
 wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
     const data = JSON.parse(message);
     console.log('Received WebSocket message:', data);
     
@@ -379,13 +396,55 @@ wss.on('connection', (ws) => {
           }
         }
         break;
+        
+      case 'send-message':
+        const receiverWs = activeConnections.get(data.receiverId);
+        if (receiverWs) {
+          receiverWs.send(JSON.stringify({
+            type: 'receive-message',
+            senderId: data.senderId,
+            content: data.content,
+            timestamp: new Date()
+          }));
+        }
+        
+        // Store message in database
+        try {
+          const query = `
+            INSERT INTO messages (sender_id, receiver_id, content)
+            VALUES ($1, $2, $3)
+          `;
+          await db.query(query, [data.senderId, data.receiverId, data.content]);
+        } catch (error) {
+          console.error('Error storing message:', error);
+        }
+        break;
     }
   });
+});
+
+// Add new endpoint to fetch message history
+app.get('/messages/:userId', requireAuth, async (req, res) => {
+  try {
+    const query = `
+      SELECT m.*, 
+             s.full_name as sender_name,
+             r.full_name as receiver_name
+      FROM messages m
+      JOIN users s ON m.sender_id = s.id
+      JOIN users r ON m.receiver_id = r.id
+      WHERE m.sender_id = $1 OR m.receiver_id = $1
+      ORDER BY m.timestamp DESC
+    `;
+    const result = await db.query(query, [req.params.userId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
 });
 
 // Update the listen call to use the HTTP server
 server.listen(PORT,() => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-

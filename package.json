@@ -21,6 +21,7 @@
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "fs": "^0.0.1-security",
+    "mysql2": "^3.11.5",
     "path": "^0.12.7",
     "pdfkit": "^0.15.1",
     "pg": "^8.13.1",

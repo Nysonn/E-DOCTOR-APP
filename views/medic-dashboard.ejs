@@ -115,16 +115,59 @@
             </div>
           </section>
 
-          <!-- New Sections -->
-          <section id="messages-section" class="dashboard-section hidden">
-            <h2>Messages</h2>
-            <div class="messages-container">
-              <div class="messages-list" id="messages-list">
-                <!-- Messages will be populated here -->
+
+        <!-- Messages Section -->
+         <section id="messages-section" class="dashboard-section hidden">
+          <h2>Patient Messages</h2>
+          <div class="messages-wrapper">
+            <!-- Patients List -->
+            <div id="patients-list" class="contacts-list">
+              <!-- Template for patient items -->
+              <template id="patient-template">
+                <div class="contact-item" data-patient-id="">
+                  <div class="contact-avatar"></div>
+                  <div class="contact-details">
+                    <span class="contact-name"></span>
+                    <span class="contact-info"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Chat Window -->
+            <div id="chat-window" class="chat-window">
+              <div class="chat-header">
+                <div id="selected-patient-name" class="chat-patient-name">
+                  Select a patient to start chatting
+                </div>
+              </div>
+              
+              <div id="messages-container">
+                <div class="messages-list" id="messages-list">
+                  <!-- Messages will be populated dynamically -->
+                </div>
+                
+                <div class="message-input-container">
+                  <div class="input-wrapper">
+                    <textarea 
+                      id="message-input" 
+                      placeholder="Type your message..."
+                      class="message-textarea"
+                      rows="1"
+                    ></textarea>
+                    <button id="send-message" class="send-message-btn" disabled>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
+          
           <section id="appointments-section" class="dashboard-section hidden">
             <h2>Appointments</h2>
             <div class="appointments-container">
@@ -341,83 +384,6 @@
       });
     });
 
-    // Mock data population (for demonstration)
-    function populateMockData() {
-      document.getElementById("messages-list").innerHTML = `
-        <div class="message-item">
-          <div class="message-header">
-            <div class="patient-name">
-              <div class="patient-avatar">J</div>
-              John Doe
-            </div>
-            <span class="message-time">2:30 PM</span>
-          </div>
-          <div class="message-content">
-            Hello Dr. Smith, I have a question about the prescription you gave me yesterday. 
-            Should I take the medication before or after meals?
-          </div>
-          <div class="message-actions">
-            <button class="reply-button" onclick="toggleReply(this)">Reply</button>
-          </div>
-          <div class="reply-form">
-            <textarea 
-              placeholder="Type your reply..."
-              class="reply-textarea"
-            ></textarea>
-            <div class="reply-actions">
-              <button class="send-reply-btn">Send</button>
-              <button class="cancel-reply-btn" onclick="toggleReply(this.parentElement.parentElement.previousElementSibling.children[0])">Cancel</button>
-            </div>
-          </div>
-        </div>
-        <div class="message-item">
-          <div class="message-header">
-            <div class="patient-name">
-              <div class="patient-avatar">S</div>
-              Sarah Johnson
-            </div>
-            <span class="message-time">11:45 AM</span>
-          </div>
-          <div class="message-content">
-            Good morning Doctor, I've been following the treatment plan and I'm feeling much better. 
-            Would it be possible to schedule a follow-up appointment next week?
-          </div>
-          <div class="message-actions">
-            <button class="reply-button" onclick="toggleReply(this)">Reply</button>
-          </div>
-          <div class="reply-form">
-            <textarea 
-              placeholder="Type your reply..."
-              class="reply-textarea"
-            ></textarea>
-            <div class="reply-actions">
-              <button class="send-reply-btn">Send</button>
-              <button class="cancel-reply-btn" onclick="toggleReply(this.parentElement.parentElement.previousElementSibling.children[0])">Cancel</button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Add the toggle reply function
-      window.toggleReply = function(button) {
-        const messageItem = button.closest('.message-item');
-        const replyForm = messageItem.querySelector('.reply-form');
-        
-        // Close any other open reply forms
-        document.querySelectorAll('.reply-form.active').forEach(form => {
-          if (form !== replyForm) {
-            form.classList.remove('active');
-          }
-        });
-        
-        // Toggle the clicked reply form
-        replyForm.classList.toggle('active');
-      };
-    }
-
-    // Call mock data population when DOM is loaded
-    document.addEventListener("DOMContentLoaded", populateMockData);
-
     // Form toggle functionality
     document.getElementById('show-appointment-form').addEventListener('click', () => {
       document.getElementById('appointment-form').classList.remove('hidden');
@@ -438,6 +404,202 @@
       document.getElementById('appointment-form').classList.add('hidden');
       document.getElementById('show-appointment-form').classList.remove('hidden');
     });
+
+    // Load message history
+    async function loadMessages() {
+      try {
+        const response = await fetch(`/messages/${user.id}`);
+        const messages = await response.json();
+        
+        const messagesList = document.getElementById('messages-list');
+        messagesList.innerHTML = messages.map(msg => `
+          <div class="message-item ${msg.sender_id === user.id ? 'sent' : 'received'}">
+            <div class="message-header">
+              <div class="message-sender">${msg.sender_name}</div>
+              <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+            </div>
+            <div class="message-content">${msg.content}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    }
+
+    // Handle incoming messages
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'receive-message') {
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item received';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">${data.senderName}</div>
+            <div class="message-time">${new Date(data.timestamp).toLocaleString()}</div>
+          </div>
+          <div class="message-content">${data.content}</div>
+        `;
+        messagesList.prepend(messageDiv);
+      }
+    };
+
+    // Send message
+    document.getElementById('send-message').addEventListener('click', () => {
+      const input = document.getElementById('message-input');
+      const content = input.value.trim();
+      
+      if (content) {
+        socket.send(JSON.stringify({
+          type: 'send-message',
+          senderId: user.id,
+          receiverId: activePatientId, // You'll need to track this
+          content: content
+        }));
+        
+        // Add message to UI
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item sent';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">You</div>
+            <div class="message-time">${new Date().toLocaleString()}</div>
+          </div>
+          <div class="message-content">${content}</div>
+        `;
+        messagesList.prepend(messageDiv);
+        
+        input.value = '';
+      }
+    });
+
+    // Load messages when messages section is shown
+    document.querySelector('[data-target="messages-section"]').addEventListener('click', loadMessages);
+
+    let activePatientId = null; // Add this at the top to track selected patient
+
+    async function loadPatientsList() {
+      try {
+        const response = await fetch('/available-patients');
+        const patients = await response.json();
+        
+        const patientsList = document.getElementById('patients-list');
+        const template = document.getElementById('patient-template');
+        
+        // Clear existing list
+        patientsList.innerHTML = '';
+        
+        patients.forEach(patient => {
+          const clone = template.content.cloneNode(true);
+          const item = clone.querySelector('.contact-item');
+          
+          item.setAttribute('data-patient-id', patient.id);
+          item.querySelector('.contact-avatar').textContent = patient.full_name.charAt(0).toUpperCase();
+          item.querySelector('.contact-name').textContent = patient.full_name;
+          // item.querySelector('.contact-info').textContent = `Age: ${patient.age} | ${patient.residence}`;
+          
+          item.addEventListener('click', () => selectPatient(patient));
+          patientsList.appendChild(item);
+        });
+      } catch (error) {
+        console.error('Error loading patients list:', error);
+      }
+    }
+
+    function selectPatient(patient) {
+      // Update active patient ID
+      activePatientId = patient.id;
+      
+      // Remove active class from all contacts
+      document.querySelectorAll('.contact-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Add active class to selected contact
+      const selectedItem = document.querySelector(`[data-patient-id="${patient.id}"]`);
+      if (selectedItem) {
+        selectedItem.classList.add('active');
+      }
+      
+      // Update chat header
+      document.getElementById('selected-patient-name').textContent = patient.full_name;
+      
+      // Enable send button
+      document.getElementById('send-message').disabled = false;
+      
+      // Load messages for this patient
+      loadMessagesForPatient(patient.id);
+    }
+
+    async function loadMessagesForPatient(patientId) {
+      try {
+        const response = await fetch(`/messages/${patientId}`);
+        const messages = await response.json();
+        
+        const messagesList = document.getElementById('messages-list');
+        messagesList.innerHTML = messages.map(msg => `
+          <div class="message-item ${msg.sender_id === '<%= user.id %>' ? 'sent' : 'received'}">
+            <div class="message-header">
+              <div class="message-sender">${msg.sender_id === '<%= user.id %>' ? 'You' : msg.sender_name}</div>
+              <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+            </div>
+            <div class="message-content">${msg.content}</div>
+          </div>
+        `).join('');
+        
+        // Scroll to bottom of messages
+        messagesList.scrollTop = messagesList.scrollHeight;
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    }
+
+    // Update the messages section click handler to load patients list
+    document.querySelector('[data-target="messages-section"]').addEventListener('click', () => {
+      loadPatientsList();
+    });
+
+    // Update the send message event listener to use activePatientId
+    document.getElementById('send-message').addEventListener('click', () => {
+      const input = document.getElementById('message-input');
+      const content = input.value.trim();
+      
+      if (!activePatientId) {
+        alert('Please select a patient to message');
+        return;
+      }
+
+      if (content) {
+        socket.send(JSON.stringify({
+          type: 'send-message',
+          senderId: '<%= user.id %>',
+          receiverId: activePatientId,
+          content: content
+        }));
+        
+        // Add message to UI
+        const messagesList = document.getElementById('messages-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-item sent';
+        messageDiv.innerHTML = `
+          <div class="message-header">
+            <div class="message-sender">You</div>
+            <div class="message-time">${new Date().toLocaleString()}</div>
+          </div>
+          <div class="message-content">${content}</div>
+        `;
+        messagesList.prepend(messageDiv);
+        
+        input.value = '';
+      }
+    });
+
+    // Call loadPatientsList when the page loads if messages section is active
+    if (document.getElementById('messages-section').classList.contains('active')) {
+      loadPatientsList();
+    }
   </script>
 </body>
 </html>
