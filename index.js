@@ -5,8 +5,6 @@ import dotenv from "dotenv";
 import pg from "pg";
 import bcrypt from "bcrypt";
 import session from "express-session";
-import axios from "axios";
-import Twilio from "twilio";
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import pdf from 'pdfkit';
