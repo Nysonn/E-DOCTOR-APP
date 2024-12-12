@@ -24,7 +24,7 @@ const app = express();
 const db = new pg.Client({
   user: 'postgres',
   host: 'localhost',
-  database: 'e_doctor_app',
+  database: 'e_doctor_new',
   password: 'producer2022',
   port: 5432,
 });
