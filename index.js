@@ -21,13 +21,12 @@ const PORT = 3000;
 const app = express();
 
 // PostgreSQL Database connection
-// PostgreSQL Database connection
 const db = new pg.Client({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
+  user: 'postgres',
+  host: 'localhost',
+  database: 'e_doctor_app',
+  password: 'producer2022',
+  port: 5432,
 });
 
 db.connect();
@@ -35,7 +34,7 @@ db.connect();
 // Cookie-based session middleware
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: 'AGUMYA',
     resave: false,
     saveUninitialized: false,
     cookie: {
